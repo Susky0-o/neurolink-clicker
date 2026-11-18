@@ -7,6 +7,7 @@
 Windows 全局鼠标 / 键盘动作录制与回放工具 · 3D 游戏视角模式 · 无边框科幻控制台 · 零外部依赖
 
 [![Python](https://img.shields.io/badge/Python-3.8%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Release](https://img.shields.io/github/v/release/Susky0-o/neurolink-clicker?color=22d3ee&label=release)](https://github.com/Susky0-o/neurolink-clicker/releases/latest)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078D6?logo=windows&logoColor=white)](#系统要求)
 [![Dependencies](https://img.shields.io/badge/依赖-内置%20pynput-2ea44f)](#零依赖)
 [![License](https://img.shields.io/github/license/Susky0-o/neurolink-clicker?color=green)](LICENSE)
@@ -68,9 +69,10 @@ Windows 全局鼠标 / 键盘动作录制与回放工具 · 3D 游戏视角模�
 
 ### 方式一：下载即用
 
-1. 下载仓库里的 `连点器.exe`、`启动连点器.bat`、`app.py`、`web/`、`vendor/`（整个项目文件夹最省事）。
-2. 双击 `连点器.exe`，在 UAC 弹窗点「是」。
-3. 窗口打开后按 `F9` 录制，`F10` 播放。
+到 [Releases · v1.0.0](https://github.com/Susky0-o/neurolink-clicker/releases/latest) 下载：
+
+- `NEUROLINK-Clicker-v1.0.0.zip` —— 解压即用，双击里面的 `连点器.exe`（首次会弹 UAC，点「是」）
+- 或单独下载 `NeuroLink-Clicker.exe`，与 `启动连点器.bat`、`app.py`、`web/`、`vendor/` 放在同一目录
 
 > `连点器.exe` 只是启动器，它会拉起同目录的 `启动连点器.bat`，所以两者必须在同一个文件夹里。
 
