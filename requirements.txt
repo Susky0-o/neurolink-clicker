@@ -1,0 +1,8 @@
+# NEUROLINK 运行依赖
+#
+# pynput 已内置在 vendor/ 目录，无需安装（程序优先从 vendor 导入）。
+# 只有在删掉 vendor/ 后才需要：
+pynput>=1.7.6
+
+# 可选：无边框独立窗口容器。缺失时程序会自动退回浏览器模式。
+# pywebview>=4.0

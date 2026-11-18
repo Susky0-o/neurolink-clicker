@@ -1,0 +1,24 @@
+# 运行时产物
+运行日志.txt
+*.log
+
+# Python 缓存
+__pycache__/
+*.py[cod]
+*.pyo
+
+# 本地录制的脚本（示例脚本除外）
+scripts/*.json
+!scripts/示例-矩形轨迹.json
+
+# 根目录下的截图原文件（仓库使用 assets/ 下的同名副本）
+/界面预览.png
+/控制台界面.png
+/图标-源图.png
+
+# 编辑器与系统
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini

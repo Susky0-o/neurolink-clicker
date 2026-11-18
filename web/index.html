@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NEUROLINK · 神经连点器</title>
+<script>
+window.addEventListener('error', function (e) {
+  if (window.console) console.error('[NEUROLINK]', e.message);
+});
+</script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root{
+  --bg:#04070b;
+  --line:rgba(56,189,248,.16);
+  --line2:rgba(56,189,248,.38);
+  --cy:#2be8ff;
+  --pu:#8b5cf6;
+  --rd:#ff3b5c;
+  --gn:#3dffa2;
+  --yl:#ffc857;
+  --tx:#c2e3f0;
+  --dim:#527080;
+  --mono:"JetBrains Mono","Cascadia Mono",Consolas,"SF Mono",monospace;
+}
+html,body{height:100%}
+body{
+  background:
+    radial-gradient(1100px 520px at 78% -8%, rgba(43,232,255,.13), transparent 62%),
+    radial-gradient(900px 500px at 6% 108%, rgba(139,92,246,.13), transparent 60%),
+    var(--bg);
+  color:var(--tx); font-family:var(--mono); font-size:15px; overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image:
+    linear-gradient(rgba(43,232,255,.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(43,232,255,.06) 1px, transparent 1px);
+  background-size:52px 52px;
+  -webkit-mask-image: radial-gradient(120% 100% at 50% 0%, #000 28%, transparent 96%);
+  mask-image: radial-gradient(120% 100% at 50% 0%, #000 28%, transparent 96%);
+}
+body::after{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:99;
+  background:repeating-linear-gradient(180deg, rgba(255,255,255,.03) 0 1px, transparent 1px 3px);
+  opacity:.55;
+}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:rgba(43,232,255,.22);border-radius:0}
+::-webkit-scrollbar-thumb:hover{background:rgba(43,232,255,.4)}
+::-webkit-scrollbar-track{background:transparent}
+
+.app{position:relative; z-index:1; height:100vh; display:grid; grid-template-rows:68px 1fr 36px}
+
+/* ---------- header ---------- */
+header{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 max(22px, calc((100vw - 1640px) / 2 + 22px));
+  border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg, rgba(8,16,22,.92), rgba(5,9,13,.4));
+}
+.brand{display:flex; align-items:center; gap:13px}
+.mark{width:30px; height:30px; position:relative; flex:none}
+.mark::before{content:""; position:absolute; inset:0; border:1px solid var(--cy); transform:rotate(45deg); box-shadow:inset 0 0 12px rgba(43,232,255,.5), 0 0 10px rgba(43,232,255,.35)}
+.mark::after{content:""; position:absolute; left:50%; top:50%; width:7px; height:7px; transform:translate(-50%,-50%); background:var(--cy); box-shadow:0 0 12px var(--cy)}
+h1{font-size:18px; letter-spacing:.32em; font-weight:600; color:#eaffff; text-shadow:0 0 18px rgba(43,232,255,.5)}
+.sub{font-size:10px; letter-spacing:.22em; color:var(--dim); margin-top:3px}
+.right-head{display:flex; align-items:center; gap:22px}
+.pill{
+  display:flex; align-items:center; gap:9px; padding:7px 15px; font-size:10px; letter-spacing:.2em;
+  border:1px solid var(--line2); background:rgba(43,232,255,.05); color:var(--dim);
+  clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px);
+}
+.pill .dot{width:7px; height:7px; border-radius:50%; background:var(--dim)}
+body.mode-rec .pill{color:#ff8fa0; border-color:rgba(255,59,92,.55); background:rgba(255,59,92,.09)}
+body.mode-rec .pill .dot{background:var(--rd); animation:pulse 1s infinite}
+body.mode-play .pill{color:var(--cy); border-color:rgba(43,232,255,.75); background:rgba(43,232,255,.11)}
+body.mode-play .pill .dot{background:var(--cy); animation:pulse .55s infinite}
+.right-head .pill.perm{color:var(--cy); border-color:rgba(43,232,255,.45); background:rgba(43,232,255,.06)}
+.right-head .pill.perm .dot{background:var(--cy); animation:none}
+.right-head .pill.perm.bad{color:#ffb27a; border-color:rgba(255,148,72,.62); background:rgba(255,120,60,.1)}
+.right-head .pill.perm.bad .dot{background:#ff9d4d; animation:pulse 1.5s infinite}
+body.mode-rec .mark::before{border-color:var(--rd); box-shadow:inset 0 0 12px rgba(255,59,92,.5),0 0 12px rgba(255,59,92,.4)}
+body.mode-rec .mark::after{background:var(--rd); box-shadow:0 0 12px var(--rd)}
+@keyframes pulse{0%,100%{opacity:1; transform:scale(1)}50%{opacity:.35; transform:scale(.85)}}
+.hotkeys{display:flex; gap:14px; font-size:10px; color:var(--dim); letter-spacing:.12em}
+.hotkeys span{display:flex; align-items:center; gap:6px}
+kbd{font-family:var(--mono); font-size:9px; padding:2px 6px; border:1px solid var(--line2); background:rgba(43,232,255,.06); color:var(--cy); letter-spacing:.1em}
+
+/* ---------- main ---------- */
+main{display:grid; grid-template-columns:400px 1fr; gap:14px; padding:14px 22px; min-height:0; width:100%; max-width:1640px; margin:0 auto}
+.panel{
+  position:relative; display:flex; flex-direction:column; min-height:0;
+  background:linear-gradient(180deg, rgba(11,21,29,.92), rgba(6,11,16,.95));
+  border:1px solid var(--line);
+  clip-path:polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
+}
+.panel-head{
+  display:flex; align-items:center; gap:9px; padding:13px 18px; flex:none;
+  border-bottom:1px solid var(--line); font-size:11px; letter-spacing:.24em; color:var(--cy);
+}
+.panel-head i{width:6px; height:6px; background:var(--cy); box-shadow:0 0 9px var(--cy); display:block; flex:none}
+.panel-head .tools{margin-left:auto; display:flex; gap:7px}
+.btn-sm{
+  background:rgba(43,232,255,.07); border:1px solid var(--line2); color:var(--cy);
+  font-family:var(--mono); font-size:10px; letter-spacing:.1em; padding:5px 9px; cursor:pointer;
+  transition:.14s; white-space:nowrap;
+}
+.btn-sm:hover{background:rgba(43,232,255,.18)}
+.btn-sm.danger{color:#ff8095; border-color:rgba(255,59,92,.4)}
+.btn-sm.danger:hover{background:rgba(255,59,92,.14)}
+
+/* ---------- 左栏 ---------- */
+.pbody{padding:18px; display:flex; flex-direction:column; gap:18px; overflow-y:auto; min-height:0}
+.btns{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.btns #btnRec{grid-column:span 2}
+.big{
+  position:relative; height:76px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+  background:rgba(43,232,255,.03); border:1px solid var(--line2); color:var(--cy); cursor:pointer;
+  font-family:var(--mono); font-size:13px; letter-spacing:.24em;
+  clip-path:polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+  transition:background .16s, box-shadow .16s;
+}
+.big .ico{font-size:15px; line-height:1}
+.big span{white-space:nowrap}
+.big em{font-style:normal; font-size:9px; letter-spacing:.1em; opacity:.5}
+.big:hover{background:rgba(43,232,255,.11); box-shadow:inset 0 0 22px rgba(43,232,255,.16)}
+.big:active{transform:translateY(1px)}
+.big.on{background:rgba(43,232,255,.17); box-shadow:inset 0 0 28px rgba(43,232,255,.3), 0 0 20px rgba(43,232,255,.16)}
+.big.rec{color:#ff6b81; border-color:rgba(255,59,92,.42)}
+.big.rec:hover{background:rgba(255,59,92,.12)}
+.big.rec.on{background:rgba(255,59,92,.17); box-shadow:inset 0 0 28px rgba(255,59,92,.32), 0 0 20px rgba(255,59,92,.2)}
+.big.stop{color:#8aa7b5; border-color:rgba(255,255,255,.12)}
+.big.stop:hover{background:rgba(255,255,255,.05); color:#dbeefa}
+
+.field{display:flex; flex-direction:column; gap:7px}
+.flabel{display:flex; justify-content:space-between; align-items:center; font-size:10px; letter-spacing:.18em; color:var(--dim)}
+.flabel b{color:var(--cy); font-weight:500; letter-spacing:.08em}
+input[type=range]{-webkit-appearance:none; appearance:none; width:100%; height:20px; background:transparent; cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:2px; background:linear-gradient(90deg, var(--cy) 0%, var(--cy) var(--fill,40%), rgba(255,255,255,.13) var(--fill,40%))}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none; width:12px; height:12px; margin-top:-5px; border:none;
+  background:var(--cy); box-shadow:0 0 12px var(--cy);
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);
+}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+input.num{
+  width:100%; background:rgba(43,232,255,.05); border:1px solid var(--line); color:var(--tx);
+  font-family:var(--mono); font-size:14px; padding:10px 11px; outline:none; transition:.15s;
+}
+input.num:focus{border-color:var(--cy); box-shadow:inset 0 0 14px rgba(43,232,255,.1), 0 0 0 1px rgba(43,232,255,.25)}
+.hint{font-style:normal; font-size:9px; color:var(--dim); letter-spacing:.1em}
+.stats{display:grid; grid-template-columns:repeat(3,1fr); padding:13px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line)}
+.stats div{display:flex; flex-direction:column; align-items:center; gap:5px}
+.stats b{font-size:19px; font-weight:500; color:#eafcff; text-shadow:0 0 14px rgba(43,232,255,.45)}
+.stats span{font-size:9px; letter-spacing:.16em; color:var(--dim)}
+.save-row{display:grid; grid-template-columns:1fr 64px; gap:8px}
+.script-list{display:flex; flex-direction:column; gap:6px; max-height:132px; overflow-y:auto}
+.sitem{display:flex; align-items:center; gap:8px; padding:6px 9px; border:1px solid var(--line); background:rgba(255,255,255,.02); font-size:11px}
+.sitem .nm{flex:1; color:var(--tx); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.sitem .mt{font-size:9px; color:var(--dim); white-space:nowrap}
+.sitem button{background:transparent; border:1px solid var(--line); color:var(--dim); font-family:var(--mono); font-size:9px; padding:2px 5px; cursor:pointer}
+.sitem button:hover{color:var(--cy); border-color:var(--cy)}
+.sitem button.x:hover{color:var(--rd); border-color:var(--rd)}
+.blank{font-size:10px; color:var(--dim); letter-spacing:.12em; padding:6px 0}
+.tips{display:flex; flex-direction:column; gap:7px; padding-left:12px; border-left:1px solid rgba(43,232,255,.3); margin-top:2px}
+.tips p{font-size:11px; line-height:1.55; color:#5f7d8d; letter-spacing:.02em}
+.tips p b{color:rgba(43,232,255,.8); font-weight:500}
+
+/* ---------- 时间线 ---------- */
+.thead{
+  display:flex; align-items:center; padding:8px 12px; flex:none;
+  font-size:10px; letter-spacing:.16em; color:var(--dim); border-bottom:1px solid var(--line);
+}
+.thead span:nth-child(1){flex:0 0 50px}
+.thead span:nth-child(2){flex:0 0 64px}
+.thead span:nth-child(3){flex:0 0 420px}
+.thead span:nth-child(4){flex:0 0 92px; text-align:right; padding-right:8px; margin-left:auto}
+.thead span:nth-child(5){flex:0 0 92px; text-align:right}
+.list{position:relative; flex:1; overflow-y:auto; min-height:0}
+.spacer{width:1px; pointer-events:none}
+.row{
+  position:absolute; top:0; left:0; right:0; height:36px; will-change:transform;
+  display:flex; align-items:center; padding:0 12px;
+  border-bottom:1px solid rgba(255,255,255,.032); font-size:12.5px;
+  transition:background .1s;
+}
+.row:hover{background:rgba(43,232,255,.055)}
+.row .idx{color:#3d5866; font-size:10px; flex:0 0 50px}
+.tag{flex:0 0 64px; font-size:9px; letter-spacing:.1em; padding:2px 6px; border:1px solid; white-space:nowrap}
+.tag.move{color:#7fb3c6; border-color:rgba(127,179,198,.35)}
+.tag.click{color:var(--cy); border-color:rgba(43,232,255,.4)}
+.tag.scroll{color:#b39cff; border-color:rgba(139,92,246,.45)}
+.tag.key{color:var(--gn); border-color:rgba(61,255,162,.38)}
+.tag.wait{color:var(--yl); border-color:rgba(255,200,87,.4)}
+.dt{flex:0 0 420px; color:#9fbccb; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding-right:12px}
+.dl{flex:0 0 92px; margin-left:auto; padding-right:8px; display:flex; align-items:center; justify-content:flex-end; gap:3px}
+.dl input{
+  width:46px; background:transparent; border:1px solid transparent; color:#d7f0fa;
+  font-family:var(--mono); font-size:11px; text-align:right; padding:2px 3px; outline:none; -moz-appearance:textfield;
+}
+.dl input::-webkit-inner-spin-button,.dl input::-webkit-outer-spin-button{-webkit-appearance:none; margin:0}
+.dl input:hover{border-color:var(--line)}
+.dl input:focus{border-color:var(--cy); background:rgba(43,232,255,.08)}
+.dl i{font-style:normal; font-size:9px; color:#3d5866}
+.ops{flex:0 0 102px; display:flex; gap:2px; justify-content:flex-end; opacity:0; transition:opacity .15s}
+.row:hover .ops, .row:focus-within .ops{opacity:1}
+.ops button{
+  width:18px; height:19px; display:flex; align-items:center; justify-content:center;
+  background:transparent; border:1px solid var(--line); color:var(--dim); cursor:pointer; font-size:9px; line-height:1; padding:0;
+}
+.ops button:hover{color:var(--cy); border-color:var(--cy)}
+.ops button.del:hover{color:var(--rd); border-color:var(--rd)}
+.ops button.ins{border-color:var(--line2); color:rgba(43,232,255,.75)}
+.ops button.ins:hover{color:var(--cy); border-color:var(--cy); box-shadow:0 0 10px rgba(43,232,255,.3)}
+.seg{font-style:normal; font-size:9px; letter-spacing:.1em; color:#3d5866; margin-left:10px}
+.count-badge{font-style:normal; font-size:9px; letter-spacing:.08em; color:rgba(139,92,246,.85); margin-left:8px; border:1px solid rgba(139,92,246,.35); padding:1px 5px}
+.empty{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  pointer-events:none;
+}
+.empty .card{
+  display:flex; flex-direction:column; align-items:center; gap:12px; padding:30px 46px;
+  border:1px dashed rgba(43,232,255,.2); background:rgba(43,232,255,.015);
+  font-size:12px; letter-spacing:.16em; color:var(--dim);
+  clip-path:polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+}
+.empty b{font-weight:500; color:rgba(43,232,255,.5); font-size:30px; letter-spacing:.1em; animation:pulse 2.4s infinite}
+
+/* ---------- 插入动作面板 ---------- */
+.modal{
+  position:fixed; inset:0; z-index:80; display:flex; align-items:center; justify-content:center;
+  background:rgba(3,6,10,.78); backdrop-filter:blur(4px);
+}
+.modal[hidden]{display:none}
+.mcard{
+  width:min(540px,92vw); max-height:88vh; display:flex; flex-direction:column;
+  background:linear-gradient(180deg, rgba(11,21,29,.99), rgba(5,10,15,.99));
+  border:1px solid rgba(43,232,255,.5);
+  box-shadow:0 0 44px rgba(43,232,255,.18), inset 0 0 30px rgba(43,232,255,.04);
+  clip-path:polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
+}
+.mhead{display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--line); font-size:12px; letter-spacing:.2em; color:var(--cy)}
+.mhead i{width:6px;height:6px;background:var(--cy);box-shadow:0 0 9px var(--cy);display:block}
+.mclose{background:transparent; border:1px solid var(--line); color:var(--dim); font-family:var(--mono); font-size:11px; width:24px; height:24px; cursor:pointer; line-height:1; flex:none}
+.mclose:hover{color:var(--rd); border-color:var(--rd)}
+.mtabs{display:flex; gap:6px; padding:14px 18px 0}
+.mtabs button{
+  flex:1; padding:8px 0; font-family:var(--mono); font-size:11px; letter-spacing:.1em; cursor:pointer;
+  background:transparent; border:1px solid var(--line); color:var(--dim); transition:.15s;
+}
+.mtabs button.on{color:var(--cy); border-color:rgba(43,232,255,.7); background:rgba(43,232,255,.1)}
+.mbody{display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:14px 18px; overflow-y:auto}
+.mbody .full{grid-column:span 2}
+.mfield{display:flex; flex-direction:column; gap:6px}
+.mfield span{font-size:10px; letter-spacing:.14em; color:var(--dim)}
+.mfield input, .mfield select{
+  background:rgba(255,255,255,.03); border:1px solid var(--line); color:#d7f0fa;
+  font-family:var(--mono); font-size:12px; padding:7px 9px; outline:none; width:100%;
+}
+.mfield input:focus, .mfield select:focus{border-color:var(--cy); background:rgba(43,232,255,.08)}
+.mfield select option{background:#08131a; color:#d7f0fa}
+.mfoot{display:flex; align-items:center; gap:8px; padding:14px 18px; border-top:1px solid var(--line)}
+.mnote{flex:1; font-size:10px; color:var(--dim); letter-spacing:.08em; line-height:1.5}
+.btn-sm.primary{color:var(--cy); border-color:rgba(43,232,255,.6); background:rgba(43,232,255,.1)}
+.btn-sm.primary:hover{background:rgba(43,232,255,.2)}
+
+@media (max-width: 1180px){
+  main{grid-template-columns:minmax(280px, 320px) 1fr; padding:12px 14px; gap:10px}
+  .thead span:nth-child(1), .row .idx{flex-basis:38px}
+  .thead span:nth-child(2), .tag{flex-basis:52px}
+  .thead span:nth-child(3), .dt{flex:1 1 auto; max-width:300px}
+  .thead span:nth-child(4), .dl{flex-basis:66px}
+  .thead span:nth-child(5), .ops{flex-basis:92px}
+  .ops button{width:16px}
+  .pbody{padding:14px; gap:14px}
+  .big{height:64px; font-size:12px}
+  .panel-head{padding:11px 13px}
+}
+
+/* ---------- footer ---------- */
+footer{
+  display:flex; align-items:center; gap:16px;
+  padding:0 max(22px, calc((100vw - 1640px) / 2 + 22px));
+  font-size:10px; color:var(--dim);
+  border-top:1px solid var(--line); background:rgba(6,12,18,.92);
+}
+.prog{flex:1; height:2px; background:rgba(255,255,255,.07)}
+.prog .bar{height:100%; width:0%; background:linear-gradient(90deg,var(--cy),var(--pu)); box-shadow:0 0 10px var(--cy); transition:width .1s linear}
+.fmsg{display:flex; align-items:center; gap:7px; min-width:0; max-width:60%}
+.fmsg .lv{width:5px; height:5px; flex:none; background:var(--dim)}
+.fmsg.rec .lv{background:var(--rd)} .fmsg.rec{color:#ff9aa9}
+.fmsg.ok .lv{background:var(--gn)}
+.fmsg.warn .lv{background:var(--yl); color:#efd39a}
+.fmsg.play .lv{background:var(--cy)}
+#fmsgText{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.pct{font-variant-numeric:tabular-nums; color:#7fa3b5}
+
+/* ---------- 小字可读性上调 ---------- */
+header .sub{font-size:11px}
+header .pill{font-size:11px}
+header .hotkeys{font-size:11px}
+header kbd{font-size:10px; padding:2px 7px}
+.btn-sm{font-size:11px; padding:6px 10px}
+.big em{font-size:10px}
+.flabel{font-size:11px}
+.hint{font-size:10.5px}
+.stats span{font-size:10.5px}
+.sitem .mt{font-size:10.5px}
+.sitem button{font-size:10px}
+.blank{font-size:11px}
+.thead{font-size:11px; padding:9px 12px}
+.row .idx{font-size:11px}
+.row .tag{font-size:10.5px; padding:3px 6px}
+.dl i{font-size:10px}
+.ops button{font-size:10px; height:20px}
+.row .seg{font-size:10.5px}
+.count-badge{font-size:10.5px; padding:2px 6px}
+.mfield span{font-size:11px}
+.mnote{font-size:11px; line-height:1.6}
+footer{font-size:11px}
+.empty .card{font-size:12.5px}
+
+/* ---------- 科幻动效 ---------- */
+@keyframes gridDrift{0%{transform:translate3d(0,0,0)}100%{transform:translate3d(52px,52px,0)}}
+body::before{inset:-60px; animation:gridDrift 26s linear infinite}
+
+@keyframes beamSweep{
+  0%{transform:translate3d(0,-18vh,0); opacity:0}
+  10%{opacity:.55}
+  46%{opacity:.28}
+  88%{opacity:0}
+  100%{transform:translate3d(0,118vh,0); opacity:0}
+}
+.beam{
+  position:fixed; left:0; right:0; top:0; height:130px; z-index:2; pointer-events:none;
+  background:linear-gradient(180deg, rgba(43,232,255,0) 0%, rgba(43,232,255,.07) 58%, rgba(43,232,255,.16) 92%, rgba(43,232,255,0) 100%);
+  animation:beamSweep 13s linear infinite;
+}
+
+@keyframes headSweep{0%{transform:translateX(-46%)}100%{transform:translateX(330%)}}
+.panel-head{position:relative; overflow:hidden}
+.panel-head::after{
+  content:""; position:absolute; left:0; bottom:-1px; width:34%; height:2px;
+  background:linear-gradient(90deg, transparent, var(--cy), transparent);
+  opacity:.85; animation:headSweep 4.6s linear infinite;
+}
+
+@keyframes dotPulse{
+  0%,100%{box-shadow:0 0 9px var(--cy); opacity:.82}
+  50%{box-shadow:0 0 16px var(--cy), 0 0 30px rgba(43,232,255,.45); opacity:1}
+}
+.panel-head i{animation:dotPulse 2.4s ease-in-out infinite}
+
+.big{overflow:hidden}
+.big::after{
+  content:""; position:absolute; top:0; left:-65%; width:45%; height:100%; pointer-events:none;
+  background:linear-gradient(100deg, transparent, rgba(255,255,255,.15), transparent);
+  transform:skewX(-18deg); transition:left .55s cubic-bezier(.2,.7,.3,1);
+}
+.big:hover::after{left:135%}
+
+@keyframes markGlow{
+  0%,100%{box-shadow:inset 0 0 12px rgba(43,232,255,.45), 0 0 10px rgba(43,232,255,.3)}
+  50%{box-shadow:inset 0 0 18px rgba(43,232,255,.72), 0 0 24px rgba(43,232,255,.55)}
+}
+.mark::before{animation:markGlow 3.6s ease-in-out infinite}
+body.mode-rec .mark::before{animation:none}
+
+@keyframes scanRoll{from{background-position:0 0}to{background-position:0 3px}}
+body.mode-rec::after{animation:scanRoll .75s linear infinite; opacity:.8}
+
+@keyframes btnPulse{
+  0%,100%{box-shadow:inset 0 0 22px rgba(255,59,92,.2), 0 0 14px rgba(255,59,92,.1)}
+  50%{box-shadow:inset 0 0 36px rgba(255,59,92,.44), 0 0 32px rgba(255,59,92,.3)}
+}
+body.mode-rec .big.rec.on{animation:btnPulse 1.5s ease-in-out infinite}
+
+@keyframes playPulse{
+  0%,100%{box-shadow:inset 0 0 22px rgba(43,232,255,.24), 0 0 14px rgba(43,232,255,.14)}
+  50%{box-shadow:inset 0 0 36px rgba(43,232,255,.46), 0 0 32px rgba(43,232,255,.3)}
+}
+body.mode-play .big.play.on{animation:playPulse 1.1s ease-in-out infinite}
+
+.tag.moverel{color:#b39cff; border-color:rgba(167,139,250,.5)}
+
+.rawrow{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:11px 14px; border:1px solid var(--line);
+  background:linear-gradient(90deg, rgba(139,92,246,.08), rgba(43,232,255,.03));
+  clip-path:polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  transition:border-color .2s, box-shadow .2s;
+}
+.rawrow.on{border-color:rgba(167,139,250,.62); box-shadow:inset 0 0 20px rgba(139,92,246,.14)}
+.rawtxt{display:flex; flex-direction:column; gap:4px; min-width:0}
+.rawtxt b{font-size:11.5px; letter-spacing:.18em; color:#cbd9ea; font-weight:500}
+.rawrow.on .rawtxt b{color:#d8c9ff}
+.rawtxt i{font-style:normal; font-size:10px; letter-spacing:.06em; color:var(--dim)}
+.sw{
+  position:relative; flex:none; width:44px; height:20px; padding:0; cursor:pointer;
+  background:rgba(255,255,255,.05); border:1px solid var(--line2); transition:.2s;
+}
+.sw span{
+  position:absolute; top:2px; left:2px; width:14px; height:14px;
+  background:var(--dim); transition:.2s cubic-bezier(.2,.7,.3,1);
+}
+.sw:hover{border-color:var(--cy)}
+.sw.on{border-color:rgba(167,139,250,.8); background:rgba(139,92,246,.18); box-shadow:0 0 16px rgba(139,92,246,.3)}
+.sw.on span{left:26px; background:#c4b5fd; box-shadow:0 0 12px rgba(167,139,250,.9)}
+.sw:disabled{opacity:.4; cursor:not-allowed}
+
+/* 无边框窗口的顶部按钮，只在桌面窗口里出现 */
+.winbtns{display:none; align-items:center; gap:3px; margin-left:16px; padding-left:14px; border-left:1px solid rgba(255,255,255,.07)}
+body.desktop .winbtns{display:flex}
+.winbtns button{
+  width:30px; height:26px; padding:0; cursor:pointer; line-height:1; font-size:11px;
+  color:#7f97a6; background:transparent; border:1px solid transparent;
+  font-family:var(--mono); letter-spacing:0; transition:.15s;
+}
+.winbtns button:hover{color:var(--cy); border-color:rgba(43,232,255,.34); background:rgba(43,232,255,.09)}
+.winbtns button[data-w="close"]:hover{color:#ff7288; border-color:rgba(255,59,92,.5); background:rgba(255,59,92,.14)}
+body.desktop header{cursor:default}
+
+/* 无边框窗口的边界细线，提示哪里可以拖边缩放 */
+body.desktop::after{
+  content:""; position:fixed; inset:0; z-index:46; pointer-events:none;
+  border:1px solid rgba(43,232,255,.10);
+  box-shadow:inset 0 0 26px rgba(43,232,255,.055);
+}
+
+
+.row::before{
+  content:""; position:absolute; left:0; top:0; bottom:0; width:2px; pointer-events:none;
+  background:linear-gradient(180deg, transparent, var(--cy), transparent);
+  opacity:0; transition:opacity .16s;
+}
+.row:hover::before{opacity:.9}
+
+@keyframes numBump{
+  0%{transform:translateY(0); color:#eafcff}
+  35%{transform:translateY(-3px); color:#8ff4ff; text-shadow:0 0 24px rgba(43,232,255,.95)}
+  100%{transform:translateY(0)}
+}
+.stats b.bump{animation:numBump .36s ease-out}
+
+@keyframes modalIn{from{opacity:0; transform:translateY(8px) scale(.975)}to{opacity:1; transform:none}}
+.mcard{animation:modalIn .22s ease-out}
+
+@keyframes barFlow{from{background-position:0 0}to{background-position:44px 0}}
+body.mode-play .prog .bar{
+  background-image:linear-gradient(90deg,var(--cy),var(--pu),#9ef6ff,var(--pu),var(--cy));
+  background-size:44px 100%;
+  animation:barFlow .55s linear infinite;
+}
+
+body.mode-rec header{border-bottom-color:rgba(255,59,92,.45); box-shadow:0 1px 20px rgba(255,59,92,.16)}
+body.mode-play header{border-bottom-color:rgba(43,232,255,.5); box-shadow:0 1px 20px rgba(43,232,255,.14)}
+body.mode-play .pill{text-shadow:0 0 14px rgba(43,232,255,.45)}
+
+@keyframes emptyGlow{
+  0%,100%{border-color:rgba(43,232,255,.18); box-shadow:inset 0 0 0 rgba(43,232,255,0)}
+  50%{border-color:rgba(43,232,255,.44); box-shadow:inset 0 0 26px rgba(43,232,255,.06)}
+}
+.empty .card{animation:emptyGlow 3.2s ease-in-out infinite}
+
+::-webkit-scrollbar-thumb:hover{box-shadow:0 0 8px rgba(43,232,255,.4)}
+
+@media (prefers-reduced-motion: reduce){
+  .beam, .panel-head::after, .panel-head i, .empty .card, body::before, body.mode-play .prog .bar{animation:none}
+}
+</style>
+</head>
+<body>
+
+<div class="beam"></div>
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="mark"></div>
+      <div>
+        <h1>NEUROLINK</h1>
+        <div class="sub">神经连点器 · MACRO ENGINE</div>
+      </div>
+    </div>
+    <div class="right-head">
+      <div class="pill perm" id="permPill"><span class="dot"></span><span id="permText">权限检测中</span></div>
+      <div class="pill"><span class="dot"></span><span id="modeText">待机 STANDBY</span></div>
+      <div class="hotkeys">
+        <span><kbd>F9</kbd>录制</span>
+        <span><kbd>F10</kbd>播放</span>
+        <span><kbd>ESC</kbd>急停</span>
+      </div>
+      <div class="winbtns" id="winBtns">
+        <button data-w="min" title="最小化">—</button>
+        <button data-w="max" title="最大化 / 还原">□</button>
+        <button data-w="close" title="关闭">✕</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel">
+      <div class="panel-head"><i></i>CONTROL / 控制台</div>
+      <div class="pbody">
+        <div class="btns">
+          <button id="btnRec" class="big rec"><span class="ico">●</span><span id="recLabel">开始录制</span><em>F9</em></button>
+          <button id="btnPlay" class="big play"><span class="ico">▶</span><span id="playLabel">播放</span><em>F10</em></button>
+          <button id="btnStop" class="big stop"><span class="ico">■</span><span>停止</span><em>ESC</em></button>
+        </div>
+
+        <div class="rawrow" id="rawRow">
+          <div class="rawtxt">
+            <b>视角模式</b>
+            <i>3D 游戏转头 · 记相对位移</i>
+          </div>
+          <button class="sw" id="btnRaw" aria-label="切换视角模式"><span></span></button>
+        </div>
+
+        <div class="field">
+          <div class="flabel"><span>播放速度</span><b id="speedVal">1.00x</b></div>
+          <input type="range" id="speed" min="0.1" max="10" step="0.05" value="1">
+        </div>
+
+        <div class="grid2">
+          <div class="field">
+            <div class="flabel"><span>重复次数</span></div>
+            <input class="num" id="repeat" type="number" min="0" step="1" value="1">
+            <i class="hint">0 = 无限循环</i>
+          </div>
+          <div class="field">
+            <div class="flabel"><span>循环间隔</span></div>
+            <input class="num" id="gap" type="number" min="0" step="100" value="1000">
+            <i class="hint">毫秒 / 每轮之间</i>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div><b id="statCount">0</b><span>动作</span></div>
+          <div><b id="statDur">0.0s</b><span>时长</span></div>
+          <div><b id="statLoop">0</b><span>已播轮次</span></div>
+        </div>
+
+        <div class="field">
+          <div class="flabel"><span>脚本库</span><b id="scriptCount"></b></div>
+          <div class="save-row">
+            <input class="num" id="scriptName" placeholder="脚本名称">
+            <button class="btn-sm" id="btnSave">保存</button>
+          </div>
+          <div class="script-list" id="scriptList"></div>
+        </div>
+
+        <div class="tips">
+          <p><b>F9</b> 开始 / 停止录制，<b>F10</b> 播放，<b>ESC</b> 急停</p>
+          <p>修改某行的「延迟」后，后续时间轴会自动顺延</p>
+          <p>重复次数 <b>0</b> 表示无限循环，随时 ESC 中断</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <i></i>TIMELINE / 动作时间轴
+        <span id="cnt" style="color:var(--dim);letter-spacing:.1em">0</span>
+        <div class="tools">
+          <button class="btn-sm" id="btnInsert">+ 插入动作</button>
+          <button class="btn-sm danger" id="btnClear">清空</button>
+        </div>
+      </div>
+      <div class="thead">
+        <span>序号</span><span>类型</span><span>动作详情</span><span>延迟</span><span>操作</span>
+      </div>
+      <div class="list" id="list">
+        <div class="spacer" id="spacer"></div>
+        <div class="empty" id="empty"><div class="card"><b>⌁</b><span>按 F9 开始录制，动作会实时出现在这里</span></div></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="prog"><div class="bar" id="bar"></div></div>
+    <div class="fmsg" id="fmsg"><span class="lv"></span><span id="fmsgText">系统就绪</span></div>
+    <div class="pct" id="pct">0%</div>
+  </footer>
+</div>
+
+<div class="modal" id="modal" hidden>
+  <div class="mcard">
+    <div class="mhead">
+      <div style="display:flex;align-items:center;gap:9px"><i></i><span id="mTitle">插入动作</span></div>
+      <button class="mclose" id="mClose">✕</button>
+    </div>
+    <div class="mtabs" id="mTabs">
+      <button data-t="move">移动</button>
+      <button data-t="click">点击</button>
+      <button data-t="key">按键</button>
+      <button data-t="scroll">滚轮</button>
+      <button data-t="wait">等待</button>
+    </div>
+    <div class="mbody" id="mBody"></div>
+    <div class="mfoot">
+      <div class="mnote" id="mNote"></div>
+      <button class="btn-sm" id="mCancel">取消</button>
+      <button class="btn-sm primary" id="mOk">插入</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const H = 36;
+
+const listEl = $('list'), spacer = $('spacer'), emptyEl = $('empty');
+const speedEl = $('speed'), repeatEl = $('repeat'), gapEl = $('gap');
+const scriptName = $('scriptName'), scriptList = $('scriptList');
+
+let actions = [];
+let views = [];
+let lastRev = -1;
+let mode = 'idle';
+let editing = false, pending = false, renderQueued = false;
+let inited = false;
+let rawOn = false;
+let lastMouse = {x: 960, y: 540};
+
+/* ---------------- 工具 ---------------- */
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtDur(ms){
+  const s = ms/1000;
+  if (s < 60) return s.toFixed(1) + 's';
+  const m = Math.floor(s/60);
+  return m + ':' + String(Math.floor(s%60)).padStart(2,'0');
+}
+function keyLabel(k){
+  if (!k) return '—';
+  if (k.n) return k.n.length === 1 ? k.n.toUpperCase() : k.n.replace(/_/g,' ').toUpperCase();
+  if (k.v !== undefined) return 'VK' + k.v;
+  const c = k.c || '';
+  if (c === ' ') return 'SPACE';
+  if (c === '\n') return 'ENTER';
+  if (c === '\t') return 'TAB';
+  return c.length === 1 ? c.toUpperCase() : 'KEY';
+}
+const BTN_LABEL = {left:'左键', right:'右键', middle:'中键', x1:'侧键1', x2:'侧键2'};
+const TYPE = {
+  move:   {label:'移动', desc:a => `X ${a.x} · Y ${a.y}`},
+  click:  {label:'点击', desc:a => `${BTN_LABEL[a.b] || a.b}${a.d ? ' 按下' : ' 松开'} · ${a.x}, ${a.y}`},
+  scroll: {label:'滚轮', desc:a => `Δ ${a.dx}, ${a.dy} · ${a.x}, ${a.y}`},
+  key:    {label:'按键', desc:a => `${keyLabel(a.k)} ${a.d ? '按下' : '松开'}`},
+  wait:   {label:'等待', desc:a => '静默等待'},
+  moverel:{label:'视角', desc:a => `ΔX ${a.dx >= 0 ? '+' : ''}${a.dx} · ΔY ${a.dy >= 0 ? '+' : ''}${a.dy}`}
+};
+function typeOf(a){ return TYPE[a.type] || {label:String(a.type), desc:() => ''}; }
+
+/* 连续移动合并成一段显示：只看“从哪到哪”，不逐点罗列 */
+const SEG_GAP = 600;
+function buildViews(){
+  const vs = [];
+  let i = 0;
+  while (i < actions.length) {
+    const a = actions[i];
+    if (a.type === 'move') {
+      let j = i;
+      while (j + 1 < actions.length &&
+             actions[j + 1].type === 'move' &&
+             (actions[j + 1].t - actions[j].t) <= SEG_GAP) j++;
+      if (j > i) { vs.push({kind:'path', from:i, to:j}); i = j + 1; continue; }
+    }
+    if (a.type === 'moverel') {
+      let j = i + 1, sx = a.dx || 0, sy = a.dy || 0;
+      while (j < actions.length && actions[j].type === 'moverel' &&
+             (actions[j].t - actions[j - 1].t) <= SEG_GAP) {
+        sx += actions[j].dx || 0; sy += actions[j].dy || 0; j++;
+      }
+      if (j - i > 1) { vs.push({kind:'turn', from:i, to:j - 1, dx:sx, dy:sy}); i = j; continue; }
+    }
+    vs.push({kind:'one', from:i, to:i});
+    i++;
+  }
+  return vs;
+}
+
+async function api(path, body){
+  const r = await fetch(path, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body || {})
+  });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return await r.json();
+}
+
+async function apiGet(path){
+  const r = await fetch(path, {cache: 'no-store'});
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return await r.json();
+}
+
+/* ---------------- 渲染 ---------------- */
+function render(){
+  if (editing) { pending = true; return; }
+  if (renderQueued) return;
+  renderQueued = true;
+  requestAnimationFrame(() => {
+    renderQueued = false;
+    paint();
+  });
+}
+
+function paint(){
+  views = buildViews();
+  const total = views.length;
+  const prevH = spacer.style.height ? parseFloat(spacer.style.height) : 0;
+  const stick = prevH > 0 && (listEl.scrollTop + listEl.clientHeight) >= prevH - 70;
+
+  spacer.style.height = (total * H) + 'px';
+  emptyEl.style.display = total ? 'none' : 'flex';
+
+  if (stick && total) listEl.scrollTop = Math.max(0, total * H - listEl.clientHeight);
+
+  const winTop = listEl.scrollTop;
+  const winH = listEl.clientHeight || 400;
+  const start = Math.max(0, Math.floor(winTop / H) - 2);
+  const end = Math.min(total, Math.ceil((winTop + winH) / H) + 2);
+
+  listEl.querySelectorAll('.row').forEach(n => n.remove());
+  const frag = document.createDocumentFragment();
+  for (let k = start; k < end; k++) frag.appendChild(rowNode(views[k], k));
+  listEl.appendChild(frag);
+
+  $('cnt').textContent = actions.length;
+}
+
+function rowNode(v, k){
+  const i = v.from;
+  const a = actions[i];
+  const prev = i > 0 ? actions[i-1].t : 0;
+  const d = Math.max(0, a.t - prev);
+  const el = document.createElement('div');
+  el.className = 'row';
+  el.style.transform = 'translateY(' + (k * H) + 'px)';
+
+  let tagHtml, dtHtml, opsHtml;
+  if (v.kind === 'path' || v.kind === 'turn') {
+    const b = actions[v.to];
+    const cnt = v.to - v.from + 1;
+    const dur = Math.max(0, b.t - a.t);
+    if (v.kind === 'path') {
+      tagHtml = '<span class="tag move">移动</span>';
+      dtHtml = '<span class="dt">' + a.x + ', ' + a.y + '  →  ' + b.x + ', ' + b.y +
+               (cnt > 1 ? '<em class="count-badge">' + cnt + ' 点</em>' : '') +
+               '<em class="seg">' + (dur / 1000).toFixed(2) + 's</em></span>';
+    } else {
+      tagHtml = '<span class="tag moverel">视角</span>';
+      dtHtml = '<span class="dt">转动 ΔX ' + (v.dx >= 0 ? '+' : '') + v.dx +
+               ' · ΔY ' + (v.dy >= 0 ? '+' : '') + v.dy +
+               (cnt > 1 ? '<em class="count-badge">' + cnt + ' 次</em>' : '') +
+               '<em class="seg">' + (dur / 1000).toFixed(2) + 's</em></span>';
+    }
+    opsHtml = '<span class="ops">' +
+      '<button data-op="ins" class="ins" title="在此段之后插入">＋</button>' +
+      '<button data-op="dup" title="复制整段">⧉</button>' +
+      '<button data-op="del" class="del" title="删除整段">✕</button>' +
+      '</span>';
+  } else {
+    const t = typeOf(a);
+    tagHtml = '<span class="tag ' + esc(a.type) + '">' + t.label + '</span>';
+    dtHtml = '<span class="dt">' + esc(t.desc(a)) + '</span>';
+    opsHtml = '<span class="ops">' +
+      '<button data-op="ins" class="ins" title="在此行之后插入">＋</button>' +
+      '<button data-op="up" title="上移">↑</button>' +
+      '<button data-op="down" title="下移">↓</button>' +
+      '<button data-op="dup" title="复制">⧉</button>' +
+      '<button data-op="del" class="del" title="删除">✕</button>' +
+      '</span>';
+  }
+
+  el.innerHTML =
+    '<span class="idx">' + String(i + 1).padStart(3, '0') + '</span>' +
+    tagHtml + dtHtml +
+    '<span class="dl"><input type="number" min="0" step="10" value="' + d + '"><i>ms</i></span>' +
+    opsHtml;
+
+  const input = el.querySelector('.dl input');
+  input.addEventListener('focus', () => { editing = true; });
+  input.addEventListener('blur', () => { editing = false; if (pending) { pending = false; render(); } });
+  input.addEventListener('change', async () => {
+    const val = Math.max(0, parseInt(input.value || '0', 10));
+    await api('/api/actions', {op:'delay', index:i, delay:val});
+    await loopOnce();
+  });
+
+  el.querySelector('.ops').addEventListener('click', async (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    const op = b.dataset.op;
+    if (op === 'ins') { openInsert(v.to); return; }
+    const span = v.to - v.from + 1;
+    let body;
+    if (v.kind === 'path' || v.kind === 'turn') {
+      body = op === 'del'
+        ? {op:'delete_range', index:v.from, count:span}
+        : op === 'dup'
+          ? {op:'duplicate_range', index:v.from, count:span}
+          : {op:'delay', index:v.from, delay:Math.max(0, parseInt(input.value || '0', 10))};
+    } else {
+      body = op === 'del' ? {op:'delete', index:i}
+           : op === 'dup' ? {op:'duplicate', index:i}
+           : {op:op, index:i};
+    }
+    await api('/api/actions', body);
+    await loopOnce();
+  });
+  return el;
+}
+
+function bumpStat(id, val){
+  const el = $(id);
+  if (!el) return;
+  const v = String(val);
+  if (el.dataset.last === v) return;
+  el.dataset.last = v;
+  el.textContent = v;
+  el.classList.remove('bump');
+  void el.offsetWidth;
+  el.classList.add('bump');
+}
+
+/* ---------------- 状态同步 ---------------- */
+function applyState(s){
+  mode = s.mode;
+  document.body.classList.toggle('mode-rec', s.mode === 'rec');
+  document.body.classList.toggle('mode-play', s.mode === 'play');
+  $('modeText').textContent = s.mode === 'rec' ? '录制中 RECORDING'
+      : s.mode === 'play' ? '播放中 PLAYING' : '待机 STANDBY';
+  const admin = !!(s.diag && s.diag.admin);
+  const permPill = $('permPill');
+  if (permPill) {
+    permPill.classList.toggle('bad', !admin);
+    $('permText').textContent = admin ? '管理员 ADMIN' : '普通权限';
+  }
+  $('btnRec').classList.toggle('on', s.mode === 'rec');
+  $('btnPlay').classList.toggle('on', s.mode === 'play');
+  $('recLabel').textContent = s.mode === 'rec' ? '停止录制' : '开始录制';
+  $('playLabel').textContent = s.mode === 'play' ? '停止播放' : '播放';
+  $('btnStop').style.opacity = s.mode === 'idle' ? '.45' : '1';
+
+  const raw = !!s.raw;
+  if (raw !== rawOn) {
+    rawOn = raw;
+    const sw = $('btnRaw');
+    if (sw) sw.classList.toggle('on', raw);
+    const row = $('rawRow');
+    if (row) row.classList.toggle('on', raw);
+  }
+  const sw = $('btnRaw');
+  if (sw) sw.disabled = s.mode !== 'idle';
+
+  bumpStat('statCount', s.count);
+  bumpStat('statDur', fmtDur(s.duration));
+  bumpStat('statLoop', (s.progress && s.progress.loop) || 0);
+
+  const dm = s.diag && s.diag.cursor;
+  if (dm && typeof dm.x === 'number' && typeof dm.y === 'number') lastMouse = {x: dm.x, y: dm.y};
+  else if (Array.isArray(dm) && dm.length >= 2) lastMouse = {x: Number(dm[0]), y: Number(dm[1])};
+
+  const dur = s.duration || 1;
+  const el = (s.progress && s.progress.elapsed) || 0;
+  const pct = s.mode === 'play' ? Math.min(100, (el / dur) * 100) : 0;
+  $('bar').style.width = pct.toFixed(1) + '%';
+  $('pct').textContent = Math.round(pct) + '%';
+
+  if (!inited) {
+    inited = true;
+    setSpeed(s.speed); repeatEl.value = s.repeat; gapEl.value = s.gap;
+  } else {
+    if (document.activeElement !== speedEl && Math.abs(Number(speedEl.value) - s.speed) > 0.001) setSpeed(s.speed);
+    if (document.activeElement !== repeatEl && Number(repeatEl.value) !== s.repeat) repeatEl.value = s.repeat;
+    if (document.activeElement !== gapEl && Number(gapEl.value) !== s.gap) gapEl.value = s.gap;
+  }
+
+  const log = (s.logs && s.logs.length) ? s.logs[s.logs.length - 1] : null;
+  const fmsg = $('fmsg');
+  if (log) {
+    fmsg.className = 'fmsg ' + (log.lv || 'info');
+    $('fmsgText').textContent = '[' + log.t + '] ' + log.m;
+  }
+  paintScripts(s.scripts || []);
+}
+
+function setSpeed(v){
+  speedEl.value = v;
+  const p = ((Math.log(v) - Math.log(0.1)) / (Math.log(10) - Math.log(0.1))) * 100;
+  speedEl.style.setProperty('--fill', Math.max(0, Math.min(100, p)) + '%');
+  $('speedVal').textContent = Number(v).toFixed(2) + 'x';
+}
+
+let scriptSig = '';
+function paintScripts(items){
+  const sig = items.map(i => i.name + i.count + i.at).join('|');
+  if (sig === scriptSig) return;
+  scriptSig = sig;
+  scriptList.innerHTML = '';
+  $('scriptCount').textContent = items.length ? items.length + ' 个' : '';
+  if (!items.length) {
+    scriptList.innerHTML = '<div class="blank">暂无脚本 · 录制后可保存为脚本</div>';
+    return;
+  }
+  items.forEach(it => {
+    const row = document.createElement('div');
+    row.className = 'sitem';
+    row.innerHTML = '<span class="nm">' + esc(it.name) + '</span><span class="mt">' + it.count + ' 动作</span>' +
+                    '<button data-a="load">载入</button><button data-a="del" class="x">删</button>';
+    row.querySelectorAll('button').forEach(b => b.addEventListener('click', async () => {
+      if (b.dataset.a === 'load') await api('/api/scripts/load', {name: it.name});
+      else if (confirm('删除脚本「' + it.name + '」？')) await api('/api/scripts/delete', {name: it.name});
+    }));
+    scriptList.appendChild(row);
+  });
+}
+
+async function pullActions(){
+  let res = await apiGet('/api/actions?since=' + actions.length);
+  if (res.start > actions.length) res = await apiGet('/api/actions?since=0');
+  actions.length = res.start;
+  for (const a of res.actions) actions.push(a);
+  lastRev = res.rev;
+  render();
+}
+
+/* ---------------- 轮询 ---------------- */
+let offline = false;
+async function loop(){
+  try {
+    const s = await apiGet('/api/state');
+    if (offline) { offline = false; $('fmsgText').textContent = '已重新连接'; $('fmsg').className = 'fmsg ok'; }
+    applyState(s);
+    if (s.rev !== lastRev) await pullActions();
+  } catch (err) {
+    if (!offline) {
+      offline = true;
+      $('fmsg').className = 'fmsg warn';
+      $('fmsgText').textContent = '后端连接中断，正在重试…';
+    }
+  }
+  setTimeout(loop, mode === 'rec' ? 120 : 150);
+}
+
+/* ---------------- 交互 ---------------- */
+$('btnRec').addEventListener('click', async () => {
+  if (mode === 'rec') await api('/api/record/stop');
+  else await api('/api/record/start');
+  setTimeout(loopOnce, 60);
+});
+$('btnPlay').addEventListener('click', async () => {
+  if (mode === 'play') await api('/api/stop');
+  else await api('/api/play');
+  setTimeout(loopOnce, 60);
+});
+$('btnStop').addEventListener('click', () => api('/api/stop'));
+$('btnRaw').addEventListener('click', async () => {
+  const sw = $('btnRaw');
+  if (sw.disabled) return;
+  try {
+    const r = await api('/api/raw', {on: !rawOn});
+    if (!r.ok) alert(r.error || '视角模式切换失败');
+  } catch (e) { alert('视角模式切换失败'); }
+  await loopOnce();
+});
+
+/* ---------------- 无边框窗口：拖动 + 最小化 / 最大化 / 关闭 ---------------- */
+function hasBridge(){
+  return !!(window.pywebview && window.pywebview.api && window.pywebview.api.move_to);
+}
+
+function bindWindowChrome(){
+  const hd = document.querySelector('header');
+  const btns = $('winBtns');
+  if (!hd || !btns || hd.dataset.bound) return;
+  hd.dataset.bound = '1';
+
+  let dragging = false, sx = 0, sy = 0, wx = 0, wy = 0, raf = 0, pending = null;
+
+  hd.addEventListener('mousedown', async (e) => {
+    if (e.button !== 0) return;
+    if (e.target.closest('button, kbd, input, .winbtns')) return;
+    dragging = true;
+    sx = e.screenX; sy = e.screenY;
+    pending = null;
+    try {
+      const p = await window.pywebview.api.win_pos();
+      wx = p.x; wy = p.y;
+    } catch (_) { dragging = false; }
+    e.preventDefault();
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    pending = [wx + (e.screenX - sx), wy + (e.screenY - sy)];
+    if (!raf) raf = requestAnimationFrame(() => {
+      raf = 0;
+      if (pending) window.pywebview.api.move_to(pending[0], pending[1]);
+    });
+  });
+
+  window.addEventListener('mouseup', () => { dragging = false; pending = null; });
+  window.addEventListener('blur', () => { dragging = false; pending = null; });
+
+  btns.querySelector('[data-w="min"]').onclick = () => window.pywebview.api.minimize();
+  btns.querySelector('[data-w="max"]').onclick = () => window.pywebview.api.toggle_maximize();
+  btns.querySelector('[data-w="close"]').onclick = () => window.pywebview.api.quit_app();
+
+  hd.addEventListener('dblclick', (e) => {
+    if (e.target.closest('button, kbd, input, .winbtns')) return;
+    window.pywebview.api.toggle_maximize();
+  });
+
+  bindResizers();
+}
+
+/* 无边框窗口没有系统缩放边框，四周补一圈可拖动的热区 */
+function bindResizers(){
+  if (document.body.dataset.rz) return;
+  document.body.dataset.rz = '1';
+  const MINW = 980, MINH = 660;
+  const DEF = {
+    n:  ['top:0;left:12px;right:12px;height:7px', 'ns-resize'],
+    s:  ['bottom:0;left:12px;right:12px;height:7px', 'ns-resize'],
+    e:  ['top:12px;bottom:12px;right:0;width:7px', 'ew-resize'],
+    w:  ['top:12px;bottom:12px;left:0;width:7px', 'ew-resize'],
+    ne: ['top:0;right:0;width:14px;height:14px', 'ne-resize'],
+    nw: ['top:0;left:0;width:14px;height:14px', 'nw-resize'],
+    se: ['bottom:0;right:0;width:14px;height:14px', 'se-resize'],
+    sw: ['bottom:0;left:0;width:14px;height:14px', 'sw-resize']
+  };
+  let start = null, dir = '', sx0 = 0, sy0 = 0, raf = 0, pending = null;
+
+  Object.keys(DEF).forEach((d) => {
+    const el = document.createElement('div');
+    el.style.cssText = 'position:fixed;z-index:49;' + DEF[d][0] + ';cursor:' + DEF[d][1];
+    document.body.appendChild(el);
+    el.addEventListener('mousedown', async (ev) => {
+      if (ev.button !== 0) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      try { start = await window.pywebview.api.win_rect(); } catch (_) { start = null; }
+      if (!start || !start.w) { start = null; return; }
+      dir = d;
+      sx0 = ev.screenX;
+      sy0 = ev.screenY;
+      document.body.style.userSelect = 'none';
+    });
+  });
+
+  window.addEventListener('mousemove', (ev) => {
+    if (!start) return;
+    const dx = ev.screenX - sx0, dy = ev.screenY - sy0;
+    let x = start.x, y = start.y, w = start.w, h = start.h;
+    if (dir.indexOf('e') >= 0) w = start.w + dx;
+    if (dir.indexOf('w') >= 0) { w = start.w - dx; x = start.x + dx; }
+    if (dir.indexOf('s') >= 0) h = start.h + dy;
+    if (dir.indexOf('n') >= 0) { h = start.h - dy; y = start.y + dy; }
+    if (w < MINW) { if (dir.indexOf('w') >= 0) x = start.x + start.w - MINW; w = MINW; }
+    if (h < MINH) { if (dir.indexOf('n') >= 0) y = start.y + start.h - MINH; h = MINH; }
+    pending = [Math.round(x), Math.round(y), Math.round(w), Math.round(h)];
+    if (!raf) raf = requestAnimationFrame(() => {
+      raf = 0;
+      if (pending) window.pywebview.api.set_rect(pending[0], pending[1], pending[2], pending[3]);
+    });
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (!start) return;
+    start = null;
+    document.body.style.userSelect = '';
+  });
+}
+
+function initDesktopChrome(){
+  if (!hasBridge()) return;
+  document.body.classList.add('desktop');
+  bindWindowChrome();
+}
+window.addEventListener('pywebviewready', initDesktopChrome);
+setTimeout(initDesktopChrome, 900);
+setTimeout(initDesktopChrome, 2500);
+$('btnClear').addEventListener('click', async () => {
+  if (!actions.length) return;
+  if (confirm('清空全部 ' + actions.length + ' 个动作？')) await api('/api/actions', {op:'clear'});
+});
+/* 插入动作：按钮绑定与面板逻辑统一放在文件末尾 */
+
+speedEl.addEventListener('input', () => {
+  const v = Number(speedEl.value);
+  $('speedVal').textContent = v.toFixed(2) + 'x';
+  const p = ((Math.log(v) - Math.log(0.1)) / (Math.log(10) - Math.log(0.1))) * 100;
+  speedEl.style.setProperty('--fill', Math.max(0, Math.min(100, p)) + '%');
+});
+speedEl.addEventListener('change', () => api('/api/settings', {speed: Number(speedEl.value)}));
+repeatEl.addEventListener('change', () => api('/api/settings', {repeat: Number(repeatEl.value) || 0}));
+gapEl.addEventListener('change', () => api('/api/settings', {gap: Number(gapEl.value) || 0}));
+$('btnSave').addEventListener('click', async () => {
+  const name = scriptName.value.trim();
+  if (!name) { scriptName.focus(); return; }
+  if (!actions.length) { alert('还没有动作，先录制一下'); return; }
+  const r = await api('/api/scripts/save', {name});
+  if (r.ok) { scriptName.value = ''; scriptSig = ''; }
+});
+listEl.addEventListener('scroll', () => render(), {passive:true});
+window.addEventListener('resize', () => render());
+
+async function loopOnce(){
+  try {
+    const s = await apiGet('/api/state');
+    applyState(s);
+    if (s.rev !== lastRev) await pullActions();
+  } catch (e) {}
+}
+
+/* ---------------- 插入动作面板 ---------------- */
+let mType = 'wait';
+let mAfter = 0;
+
+const KEY_ALIAS = {
+  enter:'enter', return:'enter', space:'space', tab:'tab', esc:'esc', escape:'esc',
+  backspace:'backspace', delete:'delete', del:'delete', insert:'insert',
+  up:'up', down:'down', left:'left', right:'right', home:'home', end:'end',
+  pageup:'page_up', pagedown:'page_down', page_up:'page_up', page_down:'page_down',
+  ctrl:'ctrl', control:'ctrl', alt:'alt', shift:'shift', win:'cmd', cmd:'cmd',
+  capslock:'caps_lock', caps_lock:'caps_lock'
+};
+for (let n = 1; n <= 20; n++) KEY_ALIAS['f' + n] = 'f' + n;
+
+function keyFromInput(raw){
+  const s = String(raw || '').trim();
+  if (!s) return { c: ' ' };
+  if (s.length === 1) return { c: s };
+  const low = s.toLowerCase();
+  return { n: KEY_ALIAS[low] || low.replace(/\s+/g, '_') };
+}
+
+function mfield(label, html, full){
+  return '<div class="mfield' + (full ? ' full' : '') + '"><span>' + label + '</span>' + html + '</div>';
+}
+
+function hintFor(t){
+  if (t === 'move') return '鼠标瞬移到指定坐标，不点击。';
+  if (t === 'click') return '「单击」会插入按下 + 松开两条；只按下常用于拖拽开始。';
+  if (t === 'key') return '敲击 = 按下 + 松开。常用键名：enter / space / tab / esc / ctrl / alt / shift / f1–f12，字母直接写 a。';
+  if (t === 'scroll') return '在鼠标当前位置滚动，正值向上、负值向下。';
+  return '纯占位时间，不做任何操作。';
+}
+
+function openInsert(afterIdx){
+  const base = (afterIdx === undefined) ? actions.length - 1 : afterIdx;
+  mAfter = Math.max(0, Math.min(base + 1, actions.length));
+  $('modal').hidden = false;
+  setModalType(mType);
+  refreshCursor();
+}
+
+// 面板打开时重新取一次光标，别用几秒前的滞后值
+function refreshCursor(){
+  apiGet('/api/state').then(function(s){
+    const c = s && s.diag && s.diag.cursor;
+    if (!c || typeof c.x !== 'number') return;
+    lastMouse = {x: c.x, y: c.y};
+    const fx = $('fX'), fy = $('fY');
+    if (fx) fx.value = c.x;
+    if (fy) fy.value = c.y;
+  }).catch(function(){});
+}
+
+function closeInsert(){ $('modal').hidden = true; }
+
+function setModalType(t){
+  mType = t;
+  document.querySelectorAll('#mTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+  const x = lastMouse.x, y = lastMouse.y;
+  let html = '';
+
+  if (t === 'move') {
+    html = mfield('X 坐标', '<input id="fX" type="number" value="' + x + '">') +
+           mfield('Y 坐标', '<input id="fY" type="number" value="' + y + '">');
+  } else if (t === 'click') {
+    html = mfield('鼠标键', '<select id="fBtn"><option value="left">左键</option><option value="right">右键</option><option value="middle">中键</option><option value="x1">侧键 1</option><option value="x2">侧键 2</option></select>') +
+           mfield('方式', '<select id="fForm"><option value="click">单击</option><option value="down">只按下</option><option value="up">只松开</option></select>') +
+           mfield('X 坐标', '<input id="fX" type="number" value="' + x + '">') +
+           mfield('Y 坐标', '<input id="fY" type="number" value="' + y + '">');
+  } else if (t === 'key') {
+    html = mfield('按键', '<input id="fKey" type="text" value="enter" placeholder="enter / space / a / ctrl">', true) +
+           mfield('方式', '<select id="fForm"><option value="tap">敲击</option><option value="down">只按下</option><option value="up">只松开</option></select>');
+  } else if (t === 'scroll') {
+    html = mfield('方向', '<select id="fDir"><option value="up">向上滚</option><option value="down">向下滚</option></select>') +
+           mfield('格数', '<input id="fN" type="number" value="3" min="1">');
+  } else {
+    html = mfield('等待时长 ms', '<input id="fDelay" type="number" value="300" min="0">', true);
+  }
+
+  if (t !== 'wait') {
+    html += mfield('延迟 ms（距上一条）', '<input id="fDelay" type="number" value="200" min="0">');
+  }
+  html += mfield('说明', '<div style="font-size:10px;color:#5f7d8d;line-height:1.65">' + hintFor(t) + '</div>', true);
+
+  $('mBody').innerHTML = html;
+  $('mNote').textContent = '插入到第 ' + (mAfter + 1) + ' 条动作之前 · 当前共 ' + actions.length + ' 条';
+}
+
+function numVal(id, dflt){
+  const el = $(id);
+  if (!el) return dflt;
+  const v = parseInt(el.value, 10);
+  return isNaN(v) ? dflt : v;
+}
+
+async function submitInsert(){
+  const delay = Math.max(0, numVal('fDelay', 200));
+  const idx = mAfter;
+  const ops = [];
+
+  if (mType === 'move') {
+    ops.push({index: idx, delay: delay, action: {type:'move', x: numVal('fX', lastMouse.x), y: numVal('fY', lastMouse.y)}});
+  } else if (mType === 'click') {
+    const b = ($('fBtn') || {}).value || 'left';
+    const form = ($('fForm') || {}).value || 'click';
+    const x = numVal('fX', lastMouse.x), y = numVal('fY', lastMouse.y);
+    if (form === 'click') {
+      ops.push({index: idx, delay: delay, action: {type:'click', x:x, y:y, b:b, d:1}});
+      ops.push({index: idx + 1, delay: 40, action: {type:'click', x:x, y:y, b:b, d:0}});
+    } else {
+      ops.push({index: idx, delay: delay, action: {type:'click', x:x, y:y, b:b, d: form === 'down' ? 1 : 0}});
+    }
+  } else if (mType === 'key') {
+    const form = ($('fForm') || {}).value || 'tap';
+    const k = keyFromInput(($('fKey') || {}).value);
+    if (form === 'tap') {
+      ops.push({index: idx, delay: delay, action: {type:'key', k:k, d:1}});
+      ops.push({index: idx + 1, delay: 40, action: {type:'key', k:k, d:0}});
+    } else {
+      ops.push({index: idx, delay: delay, action: {type:'key', k:k, d: form === 'down' ? 1 : 0}});
+    }
+  } else if (mType === 'scroll') {
+    const cnt = Math.abs(numVal('fN', 3)) || 1;
+    const dir = ($('fDir') || {}).value || 'down';
+    ops.push({index: idx, delay: delay, action: {type:'scroll', x:lastMouse.x, y:lastMouse.y, dx:0, dy: dir === 'up' ? cnt : -cnt}});
+  } else {
+    ops.push({index: idx, delay: Math.max(1, delay), action: {type:'wait'}});
+  }
+
+  for (const o of ops) {
+    const r = await api('/api/actions', {op:'insert', index:o.index, delay:o.delay, action:o.action});
+    if (!r.ok) { $('mNote').textContent = '插入失败：' + (r.error || '未知错误'); return; }
+  }
+  closeInsert();
+  await loopOnce();
+}
+
+$('btnInsert').addEventListener('click', () => openInsert(actions.length - 1));
+$('mTabs').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (b && b.dataset.t) setModalType(b.dataset.t);
+});
+$('mOk').addEventListener('click', () => { submitInsert(); });
+$('mCancel').addEventListener('click', closeInsert);
+$('mClose').addEventListener('click', closeInsert);
+$('modal').addEventListener('click', (e) => { if (e.target === $('modal')) closeInsert(); });
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !$('modal').hidden) { e.stopPropagation(); closeInsert(); }
+});
+
+setSpeed(1);
+render();
+loop();
+</script>
+</body>
+</html>
