@@ -88,9 +88,9 @@ python app.py --browser   # 退回浏览器模式，打开 http://127.0.0.1:8765
 - `pynput` 已随 `vendor/` 提供，不用 `pip install`。
 - 想要独立窗口再装一个 `pywebview`：`pip install pywebview`。
 
-<div id="系统要求"></div>
+### 系统要求
 
-**系统要求**：Windows 10 / 11（依赖 Win32 `SendInput`、Raw Input、DPI API）。Linux / macOS 不可用。
+**Windows 10 / 11**（依赖 Win32 `SendInput`、Raw Input、DPI API）。Linux / macOS 不可用。
 
 ### 零依赖
 
@@ -136,8 +136,6 @@ python app.py --browser   # 退回浏览器模式，打开 http://127.0.0.1:8765
 
 仓库自带 `scripts/示例-矩形轨迹.json`（33 个鼠标移动动作，约 8 秒绕一个矩形），可以先载入、按 `F10` 感受播放效果。它只有移动没有点击，播放时不会误触任何东西。
 
-<div id="视角模式3d-游戏专用"></div>
-
 ## 视角模式（3D 游戏专用）
 
 普通录制记的是鼠标在屏幕上的**绝对坐标**。3D 游戏读的是鼠标**相对位移**（Raw Input），而且会把光标锁在窗口中心——按绝对坐标回放，视角就会乱转、乱飞。
@@ -151,8 +149,6 @@ python app.py --browser   # 退回浏览器模式，打开 http://127.0.0.1:8765
 - 视角模式下录的点击 / 滚轮只记按下松开，不再额外挪光标。
 
 开关在录制 / 播放中不可切换。两种模式各录各的，不要混在同一份动作里。
-
-<div id="技术实现"></div>
 
 ## 技术实现
 
@@ -195,8 +191,6 @@ neurolink-clicker/
 powershell -ExecutionPolicy Bypass -File .\build_exe.ps1
 ```
 
-<div id="常见问题"></div>
-
 ## 常见问题
 
 **游戏里回放没反应？** 按顺序排查，前两条通常就能解决：
@@ -229,8 +223,6 @@ powershell -ExecutionPolicy Bypass -File .\build_exe.ps1
 - [ ] 录制热键自定义
 - [ ] 单文件免 Python 打包（PyInstaller / 便携版）
 - [ ] 脚本导入导出与云端分享
-
-<div id="参与贡献"></div>
 
 ## 参与贡献
 
